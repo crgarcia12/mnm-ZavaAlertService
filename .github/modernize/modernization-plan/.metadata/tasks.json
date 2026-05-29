@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "transform",
+      "id": "001-transform-configuration-and-secrets-to-azure",
+      "description": "Externalize configuration and remove hardcoded sensitive values for Azure-hosted operation.",
+      "reason": "The service contains hardcoded URL and sensitive defaults that reduce cloud portability and security.",
+      "requirements": "Migrate non-secret configuration to Azure App Configuration and move secrets to Azure Key Vault using managed identity patterns. Addresses issues: Hardcoded URLs detected, Hardcoded sensitive data detected, Connection strings without configuration builders detected.",
+      "dependencies": [],
+      "skills": [
+        {
+          "name": "migration-local-appsettings-azure-app-configuration",
+          "location": "builtin"
+        },
+        {
+          "name": "migration-managed-identity",
+          "location": "builtin"
+        },
+        {
+          "name": "migration-azure-keyvault-secret",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-sql-to-azure-sql",
+      "description": "Modernize SQL connectivity for Azure SQL Database.",
+      "reason": "Current SQL access and dependency profile should be modernized for Azure-hosted database connectivity.",
+      "requirements": "Migrate SQL connectivity to Azure SQL Database using managed identity authentication while preserving service behavior. Addresses issues: SQL database connection detected, System.Data.SqlClient dependency detected.",
+      "dependencies": [
+        "001-transform-configuration-and-secrets-to-azure"
+      ],
+      "skills": [
+        {
+          "name": "migration-azure-sql-database",
+          "location": "builtin"
+        },
+        {
+          "name": "migration-managed-identity",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "003-security-cve-remediation",
+      "description": "Scan project dependencies for CVEs and remediate vulnerabilities before deployment.",
+      "reason": "Security validation is required to reduce known vulnerability risk prior to cloud release.",
+      "requirements": "Upgrade vulnerable dependencies to minimum patched versions and document any major-version remediation risk. Verify project build and tests after remediation.",
+      "dependencies": [
+        "001-transform-configuration-and-secrets-to-azure",
+        "002-transform-sql-to-azure-sql"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "deployment",
+      "id": "004-deployment-azure-container-apps",
+      "description": "Containerize and deploy ZavaAlertService to Azure Container Apps.",
+      "reason": "A managed Azure runtime target is needed to complete modernization and operate the service in cloud.",
+      "requirements": "Build and deploy the application to Azure Container Apps, including container image build and runtime configuration alignment.",
+      "dependencies": [
+        "003-security-cve-remediation"
+      ],
+      "skills": [
+        {
+          "name": "azcli-containerapp-deploy",
+          "location": "builtin"
+        }
+      ],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "use existing resource group or create as part of deployment execution",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "modernization-plan",
+    "projectName": "ZavaAlertService",
+    "language": "dotnet",
+    "createdAt": "2026-05-29T00:28:20Z",
+    "version": "1.0"
+  }
+}
