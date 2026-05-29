@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Tasks template for modernization plan. Generate this file alongside plan.md to track individual migration tasks.",
+  "tasks": [
+    {
+      "type": "upgrade",
+      "id": "001-upgrade-dotnet-10",
+      "description": "Upgrade the application to the latest .NET framework.",
+      "reason": "The modernization goal explicitly requires upgrading to the latest framework before cloud-native migration tasks.",
+      "requirements": "Upgrade the project from .NET Framework 4.8 to .NET 10 and update project structure/build configuration to support the upgraded runtime while preserving existing service behavior.",
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "002-transform-rabbitmq-to-servicebus",
+      "description": "Modernize messaging from RabbitMQ to Azure Service Bus.",
+      "reason": "Cloud-native service modernization requires replacing non-Azure messaging dependencies with managed Azure messaging services.",
+      "requirements": "Migrate application messaging workflows from RabbitMQ to Azure Service Bus using Azure-native patterns and maintain equivalent alert publishing behavior.",
+      "dependencies": [
+        "001-upgrade-dotnet-10"
+      ],
+      "skills": [
+        {
+          "name": "migration-azure-servicebus",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "transform",
+      "id": "003-transform-config-and-auth",
+      "description": "Adopt Azure-native configuration and identity patterns.",
+      "reason": "Modern cloud-native services require externalized configuration and managed identity-based authentication.",
+      "requirements": "Externalize non-secret application settings to Azure App Configuration and move service authentication to Managed Identity for Azure service access.",
+      "dependencies": [
+        "001-upgrade-dotnet-10"
+      ],
+      "skills": [
+        {
+          "name": "migration-local-appsettings-azure-app-configuration-via-deployment",
+          "location": "builtin"
+        },
+        {
+          "name": "migration-managed-identity",
+          "location": "builtin"
+        }
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "security",
+      "id": "004-security-cve-remediation",
+      "description": "Scan and remediate dependency CVEs before deployment.",
+      "reason": "Security remediation is required in modernization plans to reduce known vulnerability risk before release.",
+      "requirements": "Scan all project dependencies for known CVEs and remediate identified vulnerabilities to the minimum patched versions; if major version upgrades are required, document risk and verify build/tests after remediation.",
+      "dependencies": [
+        "002-transform-rabbitmq-to-servicebus",
+        "003-transform-config-and-auth"
+      ],
+      "successCriteria": {
+        "passBuild": "true",
+        "generateNewUnitTests": "false",
+        "passUnitTests": "true"
+      }
+    },
+    {
+      "type": "deployment",
+      "id": "005-deployment-azure-container-apps",
+      "description": "Deploy the modernized application to Azure Container Apps.",
+      "reason": "The project modernization goal explicitly requires deployment to Azure using a cloud-native target.",
+      "requirements": "Containerize and deploy the upgraded and transformed application to Azure Container Apps using existing or designated Azure resources and validate runtime health in Azure.",
+      "dependencies": [
+        "004-security-cve-remediation"
+      ],
+      "skills": [
+        {
+          "name": "azcli-containerapp-deploy",
+          "location": "builtin"
+        }
+      ],
+      "targetAzureService": "Azure Container Apps",
+      "resourceStatus": "use existing",
+      "deploymentTool": "bicep"
+    }
+  ],
+  "metadata": {
+    "planName": "plan",
+    "projectName": "ZavaAlertService",
+    "language": "dotnet",
+    "createdAt": "2026-05-29T08:13:32Z",
+    "version": "1.0"
+  }
+}
